@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #08090b;
+  --color-ink-900: #0d0f13;
+  --color-ink-850: #12151b;
+  --color-ink-800: #171b22;
+  --color-ink-700: #232833;
+  --color-ink-600: #333a49;
+  --color-ink-400: #7b8798;
+  --color-ink-300: #a8b3c2;
+  --color-ink-100: #e7ecf3;
+
+  --color-glow: #ffb02e;
+  --color-glow-deep: #e08700;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-ink-950);
+  color: var(--color-ink-100);
+  font-family: var(--font-sans);
+}
+
+/* Thin dark scrollbars so the score viewport does not break the dark chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 999px;
+}
+
+/*
+ * AlphaTab draws dark notation glyphs, so the score sits on a light "paper"
+ * surface instead of the dark app chrome. The classes below are AlphaTab's own
+ * cursor/selection elements — they can only be styled from global CSS because
+ * AlphaTab injects them outside of React.
+ */
+.at-surface {
+  background: #fbfaf7;
+  color: #111;
+}
+
+.at-cursor-bar {
+  background: #ffb02e;
+  opacity: 0.22;
+}
+
+.at-cursor-beat {
+  background: #e08700;
+  width: 3px;
+}
+
+.at-selection div {
+  background: #2f6fed;
+  opacity: 0.16;
+}
+
+.at-highlight * {
+  fill: #c26a00;
+  stroke: #c26a00;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-ink-700);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--color-glow);
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--color-glow);
+  cursor: pointer;
+  border: none;
+}
