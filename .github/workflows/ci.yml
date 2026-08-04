@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # postinstall copies the AlphaTab assets into public/alphatab, which the
+      # build needs and which is not committed.
+      - run: npm ci
+
+      - run: npm run lint
+
+      # No Supabase env vars on purpose: lib/supabase.ts falls back to null when
+      # they are missing, so the build has to pass on a fresh clone too.
+      - run: npm run build

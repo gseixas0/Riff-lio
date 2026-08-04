@@ -46,3 +46,7 @@ Push na `main` → deploy automático na Vercel. PRs ganham URL de preview. As d
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind CSS · [AlphaTab](https://alphatab.net) · Supabase (Postgres + Storage) · Vercel
+
+## Licença
+
+[MIT](LICENSE). Vale para o código — os arquivos de tablatura não são meus e não estão no repositório.
