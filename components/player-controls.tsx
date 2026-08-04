@@ -26,6 +26,7 @@ type Props = {
   onStaveViewChange: (view: StaveView) => void;
   isMixerOpen: boolean;
   onToggleMixer: () => void;
+  onOpenShortcuts: () => void;
 };
 
 const STAVE_VIEWS: { value: StaveView; label: string }[] = [
@@ -59,29 +60,43 @@ export default function PlayerControls(props: Props) {
     onStaveViewChange,
     isMixerOpen,
     onToggleMixer,
+    onOpenShortcuts,
   } = props;
 
+  const played = position.end > 0 ? (position.current / position.end) * 100 : 0;
+
   return (
-    <div className="border-t border-ink-800 bg-ink-900/95 backdrop-blur">
+    <div className="border-t border-line bg-panel/95 backdrop-blur">
+      {/*
+       * The seek bar is the signature element: a wound string that fills in
+       * brass as the song plays and shimmers while it is moving.
+       */}
       <input
         type="range"
         aria-label="Posição da música"
+        aria-valuetext={`${formatTime(position.current)} de ${formatTime(position.end)}`}
         min={0}
         max={Math.max(position.end, 1)}
         value={Math.min(position.current, position.end)}
         onChange={(e) => onSeek(Number(e.target.value))}
         disabled={!isPlayerReady}
-        className="block h-1 w-full cursor-pointer rounded-none disabled:cursor-not-allowed"
+        style={{
+          background: `linear-gradient(to right, var(--color-brass) ${played}%, var(--color-line-2) ${played}%)`,
+        }}
+        className={`block h-1 w-full cursor-pointer rounded-none disabled:cursor-not-allowed ${
+          isPlaying ? "string-live" : ""
+        }`}
       />
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3 px-3 py-3 sm:px-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onTogglePlay}
             disabled={!isPlayerReady}
             aria-label={isPlaying ? "Pausar" : "Tocar"}
-            className="grid h-11 w-11 place-items-center rounded-full bg-glow text-ink-950 transition hover:bg-glow-deep disabled:cursor-not-allowed disabled:opacity-40"
+            title={isPlaying ? "Pausar (Espaço)" : "Tocar (Espaço)"}
+            className="grid h-12 w-12 place-items-center rounded-full bg-brass text-stage transition hover:bg-brass-deep disabled:cursor-not-allowed disabled:bg-line-2 disabled:text-dim"
           >
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
@@ -89,19 +104,26 @@ export default function PlayerControls(props: Props) {
             type="button"
             onClick={onStop}
             disabled={!isPlayerReady}
-            aria-label="Parar"
-            className="grid h-9 w-9 place-items-center rounded-full bg-ink-800 text-ink-300 transition hover:bg-ink-700 hover:text-ink-100 disabled:opacity-40"
+            aria-label="Parar e voltar ao início"
+            title="Parar e voltar ao início"
+            className="grid h-10 w-10 place-items-center rounded-full border border-line text-soft transition hover:border-line-2 hover:bg-panel-2 hover:text-bright disabled:opacity-40"
           >
             <StopIcon />
           </button>
-          <span className="ml-1 font-mono text-xs tabular-nums text-ink-400">
-            {formatTime(position.current)} / {formatTime(position.end)}
+          <span
+            className="ml-1 font-mono text-xs tabular-nums text-soft"
+            aria-hidden
+          >
+            {formatTime(position.current)}
+            <span className="text-dim"> / {formatTime(position.end)}</span>
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <label htmlFor="speed" className="text-xs text-ink-400">
-            Velocidade
+        <Divider />
+
+        <div className="flex items-center gap-2.5">
+          <label htmlFor="speed" className="text-[11px] uppercase tracking-[0.12em] text-dim">
+            Vel.
           </label>
           <input
             id="speed"
@@ -110,55 +132,77 @@ export default function PlayerControls(props: Props) {
             max={1.5}
             step={0.05}
             value={speed}
+            aria-valuetext={`${Math.round(speed * 100)} por cento`}
             onChange={(e) => onSpeedChange(Number(e.target.value))}
-            className="w-28 cursor-pointer"
+            className="w-24 cursor-pointer sm:w-28"
           />
-          <span className="w-10 font-mono text-xs tabular-nums text-ink-100">
+          <button
+            type="button"
+            onClick={() => onSpeedChange(1)}
+            aria-label="Voltar a velocidade para 100%"
+            title="Voltar para 100%"
+            className={`w-12 rounded-md px-1 py-0.5 text-right font-mono text-xs tabular-nums transition hover:bg-panel-2 ${
+              speed === 1 ? "text-soft" : "text-brass"
+            }`}
+          >
             {Math.round(speed * 100)}%
-          </span>
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Toggle active={isLooping} onClick={onToggleLoop} label="Repetir">
+        <Divider />
+
+        <div className="flex items-center gap-1.5">
+          <Toggle active={isLooping} onClick={onToggleLoop} label="Repetir o trecho" hint="L">
             <LoopIcon />
           </Toggle>
-          <Toggle active={metronome} onClick={onToggleMetronome} label="Metrônomo">
+          <Toggle active={metronome} onClick={onToggleMetronome} label="Metrônomo" hint="M">
             <MetronomeIcon />
           </Toggle>
-          <Toggle active={countIn} onClick={onToggleCountIn} label="Contagem de entrada">
+          <Toggle
+            active={countIn}
+            onClick={onToggleCountIn}
+            label="Contagem de entrada"
+            hint="C"
+          >
             <CountInIcon />
           </Toggle>
           <Toggle
             active={isMixerOpen}
             onClick={onToggleMixer}
-            label="Mixer (volume por instrumento)"
+            label="Mixer, volume por instrumento"
+            hint="X"
           >
             <MixerIcon />
           </Toggle>
         </div>
 
+        <Divider />
+
         <div className="flex items-center gap-2">
-          <label htmlFor="zoom" className="text-xs text-ink-400">
-            Zoom
+          <label htmlFor="zoom" className="sr-only">
+            Zoom da tablatura
           </label>
           <select
             id="zoom"
             value={zoom}
             onChange={(e) => onZoomChange(Number(e.target.value))}
-            className="rounded-md border border-ink-700 bg-ink-800 px-2 py-1 text-xs text-ink-100"
+            className="h-9 rounded-lg border border-line bg-panel-2 px-2 text-xs text-soft transition hover:border-line-2 hover:text-bright"
           >
             {[0.75, 1, 1.25, 1.5, 2].map((value) => (
               <option key={value} value={value}>
-                {Math.round(value * 100)}%
+                Zoom {Math.round(value * 100)}%
               </option>
             ))}
           </select>
 
+          <label htmlFor="stave" className="sr-only">
+            Notação exibida
+          </label>
           <select
-            aria-label="Notação exibida"
+            id="stave"
             value={staveView}
             onChange={(e) => onStaveViewChange(e.target.value as StaveView)}
-            className="rounded-md border border-ink-700 bg-ink-800 px-2 py-1 text-xs text-ink-100"
+            className="h-9 rounded-lg border border-line bg-panel-2 px-2 text-xs text-soft transition hover:border-line-2 hover:text-bright"
           >
             {STAVE_VIEWS.map((view) => (
               <option key={view.value} value={view.value}>
@@ -168,36 +212,54 @@ export default function PlayerControls(props: Props) {
           </select>
         </div>
 
-        <p className="ml-auto text-xs text-ink-400">
+        <div className="ml-auto flex items-center gap-3">
           {hasSelection ? (
-            <>
-              Trecho: <span className="text-glow">{selectionLabel}</span>{" "}
+            <p className="text-xs text-soft">
+              Trecho <span className="text-brass">{selectionLabel}</span>{" "}
               <button
                 type="button"
                 onClick={onClearSelection}
-                className="underline underline-offset-2 hover:text-ink-100"
+                className="rounded underline underline-offset-2 transition hover:text-bright"
               >
                 limpar
               </button>
-            </>
+            </p>
           ) : (
-            "Arraste sobre a tab para marcar um trecho e ative Repetir"
+            <p className="hidden text-xs text-dim lg:block">
+              Arraste sobre a tab para marcar um trecho
+            </p>
           )}
-        </p>
+
+          <button
+            type="button"
+            onClick={onOpenShortcuts}
+            aria-label="Ver atalhos de teclado"
+            title="Atalhos de teclado (?)"
+            className="grid h-9 w-9 place-items-center rounded-lg border border-line font-mono text-sm text-dim transition hover:border-line-2 hover:text-bright"
+          >
+            ?
+          </button>
+        </div>
       </div>
     </div>
   );
+}
+
+function Divider() {
+  return <span aria-hidden className="hidden h-7 w-px bg-line sm:block" />;
 }
 
 function Toggle({
   active,
   onClick,
   label,
+  hint,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   label: string;
+  hint: string;
   children: React.ReactNode;
 }) {
   return (
@@ -206,11 +268,11 @@ function Toggle({
       onClick={onClick}
       aria-label={label}
       aria-pressed={active}
-      title={label}
-      className={`grid h-9 w-9 place-items-center rounded-md border transition ${
+      title={`${label} (${hint})`}
+      className={`grid h-10 w-10 place-items-center rounded-lg border transition ${
         active
-          ? "border-glow/60 bg-glow/15 text-glow"
-          : "border-ink-700 bg-ink-800 text-ink-400 hover:text-ink-100"
+          ? "border-brass bg-brass/15 text-brass"
+          : "border-line bg-panel-2 text-dim hover:border-line-2 hover:text-bright"
       }`}
     >
       {children}
@@ -227,7 +289,7 @@ function formatTime(ms: number) {
 
 function PlayIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M8 5.14v13.72L19 12 8 5.14Z" />
     </svg>
   );
@@ -235,7 +297,7 @@ function PlayIcon() {
 
 function PauseIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
       <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
     </svg>
   );

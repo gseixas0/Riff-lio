@@ -54,6 +54,26 @@ Ficam em `.env.local` (nunca commitado) e nas Environment Variables do projeto n
 - Nomes de arquivo em kebab-case (`tab-player.tsx`).
 - As colunas da tabela `musicas` ficam em português (é o contrato com o banco) — só elas.
 
+## Design
+
+Direção: **bancada de estudo** — editorial impresso encontrando oficina. Os tokens
+vivem no `@theme` de `app/globals.css`; não usar cor solta no componente.
+
+- Neutros **quentes** (`stage`, `panel`, `line`, `dim`, `soft`, `bright`). A
+  partitura do AlphaTab é papel claro; um chrome azulado em volta faz o papel
+  parecer buraco na tela.
+- Acento `brass` (+ `brass-deep`), secundários `copper` e `sage` (status).
+- Tipografia: `font-display` (Fraunces) em títulos, `font-sans` (Geist) na
+  interface, `font-mono` (Geist Mono) em número, tempo e atalho.
+- Motivo assinatura: **corda / traste**. `.fretboard-rule` como régua de seção e
+  a barra de posição desenhada como corda que preenche em brass.
+
+Acessibilidade é requisito, não enfeite: foco visível global via `:focus-visible`,
+`prefers-reduced-motion` respeitado, `aria-pressed` em todo toggle,
+`aria-valuetext` em todo slider (senão o leitor de tela fala "83000"), região
+`aria-live` narrando o transporte, e todo controle do player tem atalho de tecla
+(painel `?`).
+
 ## Estrutura
 
 ```

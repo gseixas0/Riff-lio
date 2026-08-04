@@ -1,19 +1,32 @@
 @import "tailwindcss";
 
+/*
+ * Warm, near-black neutrals instead of the usual blue-grey dark UI. The score
+ * itself is rendered by AlphaTab on light paper, and a cold chrome around a
+ * warm page makes the paper look like a hole punched in the screen. Warm
+ * neutrals let the two surfaces read as one object.
+ */
 @theme {
-  --color-ink-950: #08090b;
-  --color-ink-900: #0d0f13;
-  --color-ink-850: #12151b;
-  --color-ink-800: #171b22;
-  --color-ink-700: #232833;
-  --color-ink-600: #333a49;
-  --color-ink-400: #7b8798;
-  --color-ink-300: #a8b3c2;
-  --color-ink-100: #e7ecf3;
+  --color-stage: #0b0a09;
+  --color-panel: #131110;
+  --color-panel-2: #1b1917;
+  --color-panel-3: #242019;
+  --color-line: #2a2724;
+  --color-line-2: #3d3833;
 
-  --color-glow: #ffb02e;
-  --color-glow-deep: #e08700;
+  /* Contrast on --color-stage: dim 6.3:1, soft 10.5:1, bright 16:1. */
+  --color-dim: #9a9187;
+  --color-soft: #c4bcb2;
+  --color-bright: #f5f0e9;
 
+  --color-brass: #f2a93b;
+  --color-brass-deep: #c47f14;
+  --color-copper: #d97757;
+  --color-sage: #7fb08a;
+
+  --color-paper: #f7f3ea;
+
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -24,15 +37,43 @@ body {
 }
 
 body {
-  background: var(--color-ink-950);
-  color: var(--color-ink-100);
+  background: var(--color-stage);
+  color: var(--color-bright);
   font-family: var(--font-sans);
+  /* Faint warm vignette so the page has a light source instead of flat black. */
+  background-image: radial-gradient(
+    120% 80% at 50% -10%,
+    #1a1613 0%,
+    transparent 60%
+  );
+  background-attachment: fixed;
 }
 
-/* Thin dark scrollbars so the score viewport does not break the dark chrome. */
+/*
+ * One focus ring for the whole app. Keyboard users get a loud brass ring on
+ * every interactive element; pointer users never see it.
+ */
+:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Respect the OS setting: no transforms, no transitions, no vibrating string. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-ink-600) transparent;
+  scrollbar-color: var(--color-line-2) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -41,48 +82,94 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-ink-600);
+  background: var(--color-line-2);
   border-radius: 999px;
 }
 
+::selection {
+  background: color-mix(in srgb, var(--color-brass) 30%, transparent);
+  color: var(--color-bright);
+}
+
+/* ---------------------------------------------------------------------------
+ * Signature motif: the fretboard
+ *
+ * Six hairlines standing in for strings. Used as a section rule on the home
+ * page and as the frame of the seek bar, which is the app's one memorable
+ * flourish. Pure CSS gradients — no images, no layout cost.
+ * ------------------------------------------------------------------------ */
+.fretboard-rule {
+  height: 11px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-line-2) 0 1px,
+    transparent 1px 2px
+  );
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+
 /*
- * AlphaTab draws dark notation glyphs, so the score sits on a light "paper"
- * surface instead of the dark app chrome. The classes below are AlphaTab's own
- * cursor/selection elements — they can only be styled from global CSS because
- * AlphaTab injects them outside of React.
+ * The seek bar is drawn as a wound string: a thin line that thickens toward the
+ * played side. While playing it picks up a slow shimmer, killed by the
+ * reduced-motion block above.
  */
+@keyframes string-shimmer {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.string-live {
+  animation: string-shimmer 1.8s ease-in-out infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * AlphaTab surfaces
+ *
+ * These class names come from AlphaTab, which injects them outside of React,
+ * so they can only be reached from global CSS.
+ * ------------------------------------------------------------------------ */
 .at-surface {
-  background: #fbfaf7;
-  color: #111;
+  background: var(--color-paper);
+  color: #14110d;
+  /* Sheet music on a desk: the page sits above the bench, not flush with it. */
+  box-shadow: inset 0 1px 0 #fffdf8, inset 0 12px 28px -22px #6b5a3f;
 }
 
 .at-cursor-bar {
-  background: #ffb02e;
-  opacity: 0.22;
+  background: var(--color-brass);
+  opacity: 0.2;
 }
 
 .at-cursor-beat {
-  background: #e08700;
+  background: var(--color-brass-deep);
   width: 3px;
 }
 
 .at-selection div {
   background: #2f6fed;
-  opacity: 0.16;
+  opacity: 0.15;
 }
 
 .at-highlight * {
-  fill: #c26a00;
-  stroke: #c26a00;
+  fill: #a85c00;
+  stroke: #a85c00;
 }
 
+/* ---------------------------------------------------------------------------
+ * Range inputs
+ * ------------------------------------------------------------------------ */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
   border-radius: 999px;
-  background: var(--color-ink-700);
-  outline: none;
+  background: var(--color-line-2);
+  outline-offset: 4px;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -91,16 +178,28 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--color-glow);
+  background: var(--color-brass);
   cursor: pointer;
   border: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brass) 22%, transparent);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--color-glow);
+  background: var(--color-brass);
   cursor: pointer;
   border: none;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background: var(--color-line-2);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  background: var(--color-line-2);
+  cursor: not-allowed;
 }

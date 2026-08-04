@@ -1,13 +1,15 @@
 export default function SetupNotice() {
   return (
-    <div className="rounded-xl border border-glow/30 bg-glow/5 p-6 text-sm leading-relaxed text-ink-300">
-      <p className="mb-3 font-medium text-glow">Supabase ainda não está configurado</p>
-      <ol className="list-decimal space-y-1.5 pl-5">
+    <div className="rounded-2xl border border-brass/30 bg-brass/[0.04] p-6 text-sm leading-relaxed text-soft">
+      <p className="mb-3 font-display text-lg text-brass">
+        Supabase ainda não está configurado
+      </p>
+      <ol className="list-decimal space-y-2 pl-5 marker:font-mono marker:text-dim">
         <li>
           Crie um projeto em{" "}
           <a
             href="https://supabase.com/dashboard"
-            className="text-ink-100 underline underline-offset-2"
+            className="rounded text-bright underline underline-offset-2 transition hover:text-brass"
             target="_blank"
             rel="noreferrer"
           >
@@ -16,16 +18,23 @@ export default function SetupNotice() {
           .
         </li>
         <li>
-          Rode o conteúdo de <code className="font-mono text-ink-100">supabase/schema.sql</code>{" "}
-          no SQL Editor — isso cria a tabela <code className="font-mono text-ink-100">musicas</code>{" "}
-          e o bucket <code className="font-mono text-ink-100">tabs</code>.
+          Rode o conteúdo de <Code>supabase/schema.sql</Code> no SQL Editor — isso
+          cria a tabela <Code>musicas</Code> e o bucket <Code>tabs</Code>.
         </li>
         <li>
-          Copie <code className="font-mono text-ink-100">.env.example</code> para{" "}
-          <code className="font-mono text-ink-100">.env.local</code> e preencha as duas variáveis.
+          Copie <Code>.env.example</Code> para <Code>.env.local</Code> e preencha
+          as duas variáveis.
         </li>
         <li>Reinicie o servidor de desenvolvimento.</li>
       </ol>
     </div>
+  );
+}
+
+function Code({ children }: { children: React.ReactNode }) {
+  return (
+    <code className="rounded border border-line bg-panel-2 px-1.5 py-0.5 font-mono text-[13px] text-bright">
+      {children}
+    </code>
   );
 }

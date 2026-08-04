@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AlphaTabApi } from "@coderline/alphatab";
+import KeyboardHints from "@/components/keyboard-hints";
 import Mixer from "@/components/mixer";
 import PlayerControls, {
   type StaveView,
@@ -31,6 +32,14 @@ function trackRole(program: number, channel: number): TrackRole {
   if (program >= 32 && program <= 39) return "bass";
   return "other";
 }
+
+/** Single glyph per instrument family, so the track chips are scannable. */
+const ROLE_GLYPHS: Record<TrackRole, string> = {
+  guitar: "♩",
+  bass: "♭",
+  drums: "✕",
+  other: "♪",
+};
 
 type Props = {
   fileUrl: string;
@@ -96,6 +105,7 @@ export default function TabPlayer({ fileUrl }: Props) {
 
   const [mix, setMix] = useState<Record<number, TrackMix>>({});
   const [isMixerOpen, setIsMixerOpen] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     const surface = surfaceRef.current;
@@ -319,58 +329,169 @@ export default function TabPlayer({ fileUrl }: Props) {
     api.renderTracks([api.score.tracks[index]]);
   }, []);
 
-  // Space toggles playback like every other tab player, but never while the
-  // user is typing in a control.
+  // Practising means one hand on the instrument, so every control has a key.
+  // Never fires while the user is typing in a control or reading the shortcut
+  // panel, and never steals the browser's own modifier combos.
+  // Read out of `position` here: a dependency named `.current` is assumed to be
+  // a ref by the exhaustive-deps rule, and refs are not valid dependencies.
+  const { current: currentTime, end: endTime } = position;
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      if (event.code !== "Space") return;
-      event.preventDefault();
-      apiRef.current?.playPause();
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      if (showShortcuts) return;
+
+      const api = apiRef.current;
+      const jump = event.shiftKey ? 20_000 : 5_000;
+
+      switch (event.key) {
+        case " ":
+          event.preventDefault();
+          api?.playPause();
+          break;
+        case "ArrowLeft":
+          event.preventDefault();
+          seek(Math.max(0, currentTime - jump));
+          break;
+        case "ArrowRight":
+          event.preventDefault();
+          seek(Math.min(endTime, currentTime + jump));
+          break;
+        case "-":
+          event.preventDefault();
+          changeSpeed(Math.max(0.25, Math.round((speed - 0.05) * 100) / 100));
+          break;
+        case "+":
+        case "=":
+          event.preventDefault();
+          changeSpeed(Math.min(1.5, Math.round((speed + 0.05) * 100) / 100));
+          break;
+        case "0":
+          event.preventDefault();
+          changeSpeed(1);
+          break;
+        case "l":
+        case "L":
+          toggleLoop();
+          break;
+        case "m":
+        case "M":
+          toggleMetronome();
+          break;
+        case "c":
+        case "C":
+          toggleCountIn();
+          break;
+        case "x":
+        case "X":
+          setIsMixerOpen((open) => !open);
+          break;
+        case "Escape":
+          clearSelection();
+          break;
+        case "?":
+          event.preventDefault();
+          setShowShortcuts(true);
+          break;
+      }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
+  }, [
+    showShortcuts,
+    currentTime,
+    endTime,
+    speed,
+    seek,
+    changeSpeed,
+    toggleLoop,
+    toggleMetronome,
+    toggleCountIn,
+    clearSelection,
+  ]);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {tracks.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto border-b border-ink-800 bg-ink-900 px-4 py-2">
-          {tracks.map((track) => (
-            <button
-              key={track.index}
-              type="button"
-              onClick={() => selectTrack(track.index)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
-                activeTrack === track.index
-                  ? "bg-glow text-ink-950"
-                  : "bg-ink-800 text-ink-300 hover:bg-ink-700 hover:text-ink-100"
-              }`}
-            >
-              {track.name || `Faixa ${track.index + 1}`}
-            </button>
-          ))}
+        <div
+          role="group"
+          aria-label="Faixa exibida na tablatura"
+          className="flex gap-1.5 overflow-x-auto border-b border-line bg-panel px-3 py-2 sm:px-4"
+        >
+          {tracks.map((track) => {
+            const active = activeTrack === track.index;
+            return (
+              <button
+                key={track.index}
+                type="button"
+                onClick={() => selectTrack(track.index)}
+                aria-pressed={active}
+                className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                  active
+                    ? "border-brass bg-brass/15 text-brass"
+                    : "border-line bg-panel-2 text-dim hover:border-line-2 hover:text-bright"
+                }`}
+              >
+                <span aria-hidden className="text-[13px] leading-none">
+                  {ROLE_GLYPHS[track.role]}
+                </span>
+                {track.name || `Faixa ${track.index + 1}`}
+              </button>
+            );
+          })}
         </div>
       )}
 
       <div ref={viewportRef} className="at-surface min-h-0 flex-1 overflow-auto">
         {error ? (
-          <div className="p-10 text-center text-sm text-red-700">
-            Não foi possível carregar a tablatura.
-            <span className="mt-1 block font-mono text-xs opacity-70">{error}</span>
+          <div
+            role="alert"
+            className="mx-auto mt-16 max-w-sm rounded-xl border border-red-800/30 bg-red-50 p-6 text-center"
+          >
+            <p className="font-medium text-red-900">
+              Não foi possível carregar a tablatura.
+            </p>
+            <p className="mt-2 font-mono text-xs leading-relaxed text-red-800/80">
+              {error}
+            </p>
           </div>
         ) : (
           <>
             {isRendering && (
-              <p className="p-10 text-center text-sm text-neutral-500">
-                Carregando tablatura…
-              </p>
+              <div className="p-16 text-center">
+                {/* Four beats filling in, so the wait reads as musical time. */}
+                <div className="mx-auto flex w-fit gap-1.5" aria-hidden>
+                  {[0, 1, 2, 3].map((beat) => (
+                    <span
+                      key={beat}
+                      className="h-6 w-1 animate-pulse rounded-full bg-neutral-400"
+                      style={{ animationDelay: `${beat * 160}ms` }}
+                    />
+                  ))}
+                </div>
+                <p className="mt-4 text-sm text-neutral-500">Montando a tablatura…</p>
+              </div>
             )}
             <div ref={surfaceRef} />
           </>
         )}
       </div>
+
+      {/* Screen-reader narration of the transport, which is otherwise silent. */}
+      <p aria-live="polite" className="sr-only">
+        {error
+          ? "Erro ao carregar a tablatura."
+          : isRendering
+            ? "Carregando a tablatura."
+            : isPlaying
+              ? `Tocando, ${Math.round(speed * 100)} por cento da velocidade.`
+              : "Pausado."}
+        {hasSelection && selectionLabel
+          ? ` Trecho marcado: ${selectionLabel}${isLooping ? ", em repetição" : ""}.`
+          : ""}
+      </p>
 
       {isMixerOpen && tracks.length > 0 && (
         <Mixer
@@ -407,7 +528,10 @@ export default function TabPlayer({ fileUrl }: Props) {
         onZoomChange={changeZoom}
         staveView={staveView}
         onStaveViewChange={changeStaveView}
+        onOpenShortcuts={() => setShowShortcuts(true)}
       />
+
+      <KeyboardHints open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 }
