@@ -51,26 +51,21 @@ export default async function SongPage({ params }: Params) {
           </svg>
         </Link>
 
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-display text-xl leading-tight text-bright">
-            {song.titulo}
-          </h1>
-          <p className="truncate text-sm text-dim">{song.artista}</p>
-        </div>
-
         {/*
-         * The badge is wide once uppercased and tracked out. Below `md` it
-         * collapses to the coloured dot alone rather than being clipped.
+         * The song title is set large over the score itself, so this bar only
+         * carries navigation — repeating the title here would be noise.
          */}
-        <div className="hidden shrink-0 md:block">
-          <StatusBadge status={song.status} />
-        </div>
-        <div className="shrink-0 md:hidden">
-          <StatusBadge status={song.status} compact />
-        </div>
+        <h1 className="sr-only">
+          {song.titulo} — {song.artista}
+        </h1>
+        <p className="min-w-0 flex-1 truncate text-xs uppercase tracking-[0.16em] text-dim">
+          Riffólio
+        </p>
+
+        <StatusBadge status={song.status} />
       </header>
 
-      <TabPlayer fileUrl={fileUrl} />
+      <TabPlayer fileUrl={fileUrl} title={song.titulo} artist={song.artista} />
     </div>
   );
 }

@@ -134,56 +134,41 @@ body {
  * so they can only be reached from global CSS.
  * ------------------------------------------------------------------------ */
 /*
- * The score is a sheet of paper lying on a bench, not a white rectangle bolted
- * to the window. `.at-desk` is the bench the page scrolls over, `.at-paper` is
- * the page itself — AlphaTab renders inside it.
+ * The score is repainted light-on-dark through `display.resources`, so it lives
+ * directly on the app surface instead of on a white sheet. `.at-desk` is that
+ * surface — the notation scrolls over it with nothing framing it.
  */
 .at-desk {
-  background-color: #100e0c;
+  background-color: #0f0d0c;
   background-image: radial-gradient(
-    100% 60% at 50% 0%,
-    #191512 0%,
+    110% 55% at 50% 0%,
+    #1a1613 0%,
     transparent 70%
   );
 }
 
-.at-paper {
-  background: var(--color-paper);
-  color: #14110d;
-  box-shadow:
-    0 1px 0 #fffdf8 inset,
-    0 18px 40px -24px #000,
-    0 2px 10px -4px rgb(0 0 0 / 0.5);
-}
-
-/* The printed page has a warm edge where it catches the light. */
-.at-paper::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  box-shadow: inset 0 0 0 1px rgb(107 90 63 / 0.18);
-}
-
+/* The bar being played warms up rather than being boxed in. */
 .at-cursor-bar {
   background: var(--color-brass);
-  opacity: 0.2;
+  opacity: 0.07;
 }
 
+/* The beat cursor is the eye's anchor while playing: a solid brass beam. */
 .at-cursor-beat {
-  background: var(--color-brass-deep);
+  background: var(--color-brass);
   width: 3px;
+  border-radius: 2px;
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-brass) 55%, transparent);
 }
 
 .at-selection div {
-  background: #2f6fed;
-  opacity: 0.15;
+  background: var(--color-copper);
+  opacity: 0.18;
 }
 
 .at-highlight * {
-  fill: #a85c00;
-  stroke: #a85c00;
+  fill: var(--color-brass);
+  stroke: var(--color-brass);
 }
 
 /* ---------------------------------------------------------------------------

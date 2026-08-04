@@ -53,6 +53,8 @@ function splitTrackName(name: string) {
 
 type Props = {
   fileUrl: string;
+  title: string;
+  artist: string;
 };
 
 const ALPHATAB_BASE = "/alphatab";
@@ -89,7 +91,7 @@ function loadAlphaTab(): Promise<AlphaTabModule> {
 }
 
 /** AlphaTab is browser-only, so the whole player runs client-side. */
-export default function TabPlayer({ fileUrl }: Props) {
+export default function TabPlayer({ fileUrl, title, artist }: Props) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<AlphaTabApi | null>(null);
@@ -113,7 +115,7 @@ export default function TabPlayer({ fileUrl }: Props) {
   const [metronome, setMetronome] = useState(false);
   const [countIn, setCountIn] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [staveView, setStaveView] = useState<StaveView>("both");
+  const [staveView, setStaveView] = useState<StaveView>("tab");
 
   const [mix, setMix] = useState<Record<number, TrackMix>>({});
   const [isMixerOpen, setIsMixerOpen] = useState(false);
@@ -143,7 +145,20 @@ export default function TabPlayer({ fileUrl }: Props) {
         display: {
           scale: 1,
           layoutMode: alphaTab.LayoutMode.Page,
-          staveProfile: alphaTab.StaveProfile.ScoreTab,
+          staveProfile: alphaTab.StaveProfile.Tab,
+          /*
+           * AlphaTab paints the notation with dark ink for print. Repainting it
+           * light-on-dark is the only way to get the score onto the app's own
+           * surface — CSS cannot reach these glyphs, they are drawn into SVG
+           * with explicit fills.
+           */
+          resources: {
+            staffLineColor: "#413b34",
+            barSeparatorColor: "#544c43",
+            barNumberColor: "#8a8177",
+            mainGlyphColor: "#f0eae1",
+            secondaryGlyphColor: "#9a9187",
+          },
         },
         player: {
           playerMode: alphaTab.PlayerMode.EnabledAutomatic,
@@ -513,14 +528,20 @@ export default function TabPlayer({ fileUrl }: Props) {
               </div>
             )}
             {/*
-             * The paper is a child of the scroll viewport, not the viewport
-             * itself: AlphaTab scrolls `viewportRef`, and the page needs margin
-             * around it to read as a sheet lying on the bench.
+             * Everything scrolls together inside the viewport AlphaTab drives,
+             * so the title behaves like a cover page and scrolls away as the
+             * score moves up.
              */}
-            <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
-              <div className="at-paper relative overflow-hidden rounded-lg">
-                <div ref={surfaceRef} />
+            <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-10">
+              <div className={`py-10 text-center ${isRendering ? "hidden" : ""}`}>
+                <h2 className="font-display text-3xl leading-tight text-bright sm:text-[2.6rem]">
+                  {title}
+                </h2>
+                <p className="mt-2 font-display text-lg italic text-brass">{artist}</p>
+                <div className="fretboard-rule mx-auto mt-6 max-w-xs" aria-hidden />
               </div>
+
+              <div ref={surfaceRef} />
             </div>
           </>
         )}
