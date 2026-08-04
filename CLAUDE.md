@@ -86,10 +86,13 @@ Por isso:
 
 ## Outras armadilhas já resolvidas
 
-**Acento em arquivo Guitar Pro.** Arquivos `.gp3/.gp4/.gp5` gravam texto em Latin-1.
-Lidos como UTF-8 (padrão do AlphaTab), todo acento vira `�` — o que atinge quase
-toda música brasileira. Resolvido com `importer.encoding: "windows-1252"` em
-`tab-player.tsx`.
+**Acento em arquivo Guitar Pro — depende da versão.** `.gp3/.gp4/.gp5` gravam
+texto em Latin-1; lidos como UTF-8 (padrão do AlphaTab), todo acento vira `�`, o
+que atinge quase toda música brasileira. Mas `.gp` (Guitar Pro 7/8), `.gpx` e
+MusicXML são XML em UTF-8 — e o AlphaTab passa o mesmo `importer.encoding` para
+todos os importadores, então fixar `windows-1252` estraga os formatos novos ao
+contrário (`Nós` → `NÃ³s`). `importerEncoding()` em `tab-player.tsx` escolhe pela
+extensão.
 
 **Nome de arquivo no Storage.** Chaves de objeto do Supabase Storage só aceitam
 ASCII. Subir `o-papa-é-pop.gp4` falha com `File name is invalid`. O nome bonito

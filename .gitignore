@@ -37,6 +37,9 @@ yarn-error.log*
 # copied from node_modules by scripts/copy-alphatab-assets.mjs
 /public/alphatab
 
+# scratch area for tab files on their way to Supabase Storage
+/tmp
+
 # vercel
 .vercel
 

@@ -38,6 +38,18 @@ type Props = {
 
 const ALPHATAB_BASE = "/alphatab";
 
+/**
+ * Guitar Pro 3-5 store text in Latin-1, so they need windows-1252 or every
+ * accent turns into "�" ("O Papa É Pop" → "O Papa � Pop"). Guitar Pro 7/8
+ * (.gp), .gpx and MusicXML are UTF-8 XML instead — and AlphaTab feeds the same
+ * `importer.encoding` to all of them, so a global windows-1252 mangles the
+ * newer formats the other way round ("Nós" → "NÃ³s"). Pick per extension.
+ */
+function importerEncoding(fileUrl: string): string {
+  const path = fileUrl.split(/[?#]/, 1)[0];
+  return /\.gp[345]$/i.test(path) ? "windows-1252" : "utf-8";
+}
+
 type AlphaTabModule = typeof import("@coderline/alphatab");
 let alphaTabModule: Promise<AlphaTabModule> | null = null;
 
@@ -104,10 +116,7 @@ export default function TabPlayer({ fileUrl }: Props) {
           scriptFile: `${ALPHATAB_BASE}/alphaTab.mjs`,
         },
         importer: {
-          // Guitar Pro 3-5 files store text in Latin-1, not UTF-8. Decoding them
-          // as UTF-8 mangles every accent, which is most Brazilian song lyrics
-          // and titles ("O Papa É Pop" → "O Papa � Pop").
-          encoding: "windows-1252",
+          encoding: importerEncoding(fileUrl),
         },
         display: {
           scale: 1,
