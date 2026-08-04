@@ -33,13 +33,23 @@ function trackRole(program: number, channel: number): TrackRole {
   return "other";
 }
 
-/** Single glyph per instrument family, so the track chips are scannable. */
-const ROLE_GLYPHS: Record<TrackRole, string> = {
-  guitar: "♩",
-  bass: "♭",
-  drums: "✕",
-  other: "♪",
+/** Colour tab per instrument family, so the track rack is scannable. */
+const ROLE_MARKS: Record<TrackRole, string> = {
+  guitar: "bg-brass/50",
+  bass: "bg-copper/60",
+  drums: "bg-line-2",
+  other: "bg-line-2",
 };
+
+/**
+ * Guitar Pro files usually name tracks "Pessoa | Instrumento". The instrument is
+ * what you pick a track by, so it leads and the player is the footnote.
+ */
+function splitTrackName(name: string) {
+  const parts = name.split("|").map((part) => part.trim());
+  if (parts.length < 2 || !parts[1]) return { instrument: name, player: null };
+  return { instrument: parts.slice(1).join(" · "), player: parts[0] };
+}
 
 type Props = {
   fileUrl: string;
@@ -93,6 +103,8 @@ export default function TabPlayer({ fileUrl }: Props) {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [position, setPosition] = useState({ current: 0, end: 0 });
+  // Musicians navigate by bar, not by second — the transport shows both.
+  const [bar, setBar] = useState({ current: 1, total: 0 });
 
   const [speed, setSpeed] = useState(1);
   const [isLooping, setIsLooping] = useState(false);
@@ -138,7 +150,9 @@ export default function TabPlayer({ fileUrl }: Props) {
           soundFont: `${ALPHATAB_BASE}/soundfont/sonivox.sf3`,
           scrollElement: viewport,
           scrollMode: alphaTab.ScrollMode.Continuous,
-          scrollOffsetY: -30,
+          // Clears the page margin the paper now sits inside, so the played bar
+          // never hides under the top edge of the viewport.
+          scrollOffsetY: -60,
           enableCursor: true,
           enableAnimatedBeatCursor: true,
           enableElementHighlighting: true,
@@ -177,6 +191,17 @@ export default function TabPlayer({ fileUrl }: Props) {
 
       api.playerPositionChanged.on((e) => {
         setPosition({ current: e.currentTime, end: e.endTime });
+
+        // Fires many times a second, so only re-render when the bar actually
+        // turns over.
+        const masterBars = api?.score?.masterBars;
+        if (!masterBars?.length) return;
+        const current = barNumberAt(masterBars, e.currentTick);
+        setBar((was) =>
+          was.current === current && was.total === masterBars.length
+            ? was
+            : { current, total: masterBars.length },
+        );
       });
 
       api.playbackRangeChanged.on((e) => {
@@ -422,59 +447,81 @@ export default function TabPlayer({ fileUrl }: Props) {
         >
           {tracks.map((track) => {
             const active = activeTrack === track.index;
+            const { instrument, player } = splitTrackName(
+              track.name || `Faixa ${track.index + 1}`,
+            );
             return (
               <button
                 key={track.index}
                 type="button"
                 onClick={() => selectTrack(track.index)}
                 aria-pressed={active}
-                className={`flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                className={`flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left transition ${
                   active
-                    ? "border-brass bg-brass/15 text-brass"
-                    : "border-line bg-panel-2 text-dim hover:border-line-2 hover:text-bright"
+                    ? "border-brass bg-brass/12 text-brass"
+                    : "border-line bg-panel-2 text-soft hover:border-line-2 hover:text-bright"
                 }`}
               >
-                <span aria-hidden className="text-[13px] leading-none">
-                  {ROLE_GLYPHS[track.role]}
+                <span
+                  aria-hidden
+                  className={`h-6 w-0.5 rounded-full ${
+                    active ? "bg-brass" : ROLE_MARKS[track.role]
+                  }`}
+                />
+                <span className="leading-tight">
+                  <span className="block text-xs font-medium">{instrument}</span>
+                  {player && (
+                    <span
+                      className={`block text-[10px] ${active ? "opacity-70" : "text-dim"}`}
+                    >
+                      {player}
+                    </span>
+                  )}
                 </span>
-                {track.name || `Faixa ${track.index + 1}`}
               </button>
             );
           })}
         </div>
       )}
 
-      <div ref={viewportRef} className="at-surface min-h-0 flex-1 overflow-auto">
+      <div ref={viewportRef} className="at-desk min-h-0 flex-1 overflow-auto">
         {error ? (
           <div
             role="alert"
-            className="mx-auto mt-16 max-w-sm rounded-xl border border-red-800/30 bg-red-50 p-6 text-center"
+            className="mx-auto mt-20 max-w-sm rounded-2xl border border-copper/40 bg-copper/[0.06] p-6 text-center"
           >
-            <p className="font-medium text-red-900">
-              Não foi possível carregar a tablatura.
+            <p className="font-display text-lg text-copper">
+              Não foi possível carregar a tablatura
             </p>
-            <p className="mt-2 font-mono text-xs leading-relaxed text-red-800/80">
-              {error}
-            </p>
+            <p className="mt-2 font-mono text-xs leading-relaxed text-dim">{error}</p>
           </div>
         ) : (
           <>
             {isRendering && (
-              <div className="p-16 text-center">
+              <div className="p-20 text-center">
                 {/* Four beats filling in, so the wait reads as musical time. */}
-                <div className="mx-auto flex w-fit gap-1.5" aria-hidden>
+                <div className="mx-auto flex w-fit items-end gap-1.5" aria-hidden>
                   {[0, 1, 2, 3].map((beat) => (
                     <span
                       key={beat}
-                      className="h-6 w-1 animate-pulse rounded-full bg-neutral-400"
+                      className="h-7 w-1 animate-pulse rounded-full bg-line-2"
                       style={{ animationDelay: `${beat * 160}ms` }}
                     />
                   ))}
                 </div>
-                <p className="mt-4 text-sm text-neutral-500">Montando a tablatura…</p>
+                <p className="mt-4 text-sm text-dim">Montando a tablatura…</p>
               </div>
             )}
-            <div ref={surfaceRef} />
+            {/*
+             * The paper is a child of the scroll viewport, not the viewport
+             * itself: AlphaTab scrolls `viewportRef`, and the page needs margin
+             * around it to read as a sheet lying on the bench.
+             */}
+            <div className="mx-auto w-full max-w-5xl px-3 py-4 sm:px-6 sm:py-6">
+              <div className="at-paper relative overflow-hidden rounded-lg">
+                <div ref={surfaceRef} />
+              </div>
+            </div>
           </>
         )}
       </div>
@@ -510,6 +557,7 @@ export default function TabPlayer({ fileUrl }: Props) {
         isPlaying={isPlaying}
         isPlayerReady={isPlayerReady}
         position={position}
+        bar={bar}
         onTogglePlay={togglePlay}
         onStop={stop}
         onSeek={seek}
@@ -536,21 +584,24 @@ export default function TabPlayer({ fileUrl }: Props) {
   );
 }
 
+type MasterBars = NonNullable<AlphaTabApi["score"]>["masterBars"];
+
+/** 1-based number of the bar a midi tick falls in. */
+function barNumberAt(masterBars: MasterBars, tick: number) {
+  let result = masterBars[0];
+  for (const bar of masterBars) {
+    if (bar.start > tick) break;
+    result = bar;
+  }
+  return result.index + 1;
+}
+
 /** Turns a tick range into a human "compassos 5–8" label. */
 function describeRange(api: AlphaTabApi, startTick: number, endTick: number) {
   const masterBars = api.score?.masterBars;
   if (!masterBars?.length) return null;
 
-  const barAt = (tick: number) => {
-    let result = masterBars[0];
-    for (const bar of masterBars) {
-      if (bar.start > tick) break;
-      result = bar;
-    }
-    return result.index + 1;
-  };
-
-  const first = barAt(startTick);
-  const last = barAt(Math.max(startTick, endTick - 1));
+  const first = barNumberAt(masterBars, startTick);
+  const last = barNumberAt(masterBars, Math.max(startTick, endTick - 1));
   return first === last ? `compasso ${first}` : `compassos ${first}–${last}`;
 }

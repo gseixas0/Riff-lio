@@ -58,7 +58,16 @@ export default async function SongPage({ params }: Params) {
           <p className="truncate text-sm text-dim">{song.artista}</p>
         </div>
 
-        <StatusBadge status={song.status} />
+        {/*
+         * The badge is wide once uppercased and tracked out. Below `md` it
+         * collapses to the coloured dot alone rather than being clipped.
+         */}
+        <div className="hidden shrink-0 md:block">
+          <StatusBadge status={song.status} />
+        </div>
+        <div className="shrink-0 md:hidden">
+          <StatusBadge status={song.status} compact />
+        </div>
       </header>
 
       <TabPlayer fileUrl={fileUrl} />

@@ -6,6 +6,7 @@ type Props = {
   isPlaying: boolean;
   isPlayerReady: boolean;
   position: { current: number; end: number };
+  bar: { current: number; total: number };
   onTogglePlay: () => void;
   onStop: () => void;
   onSeek: (ms: number) => void;
@@ -40,6 +41,7 @@ export default function PlayerControls(props: Props) {
     isPlaying,
     isPlayerReady,
     position,
+    bar,
     onTogglePlay,
     onStop,
     onSeek,
@@ -110,12 +112,17 @@ export default function PlayerControls(props: Props) {
           >
             <StopIcon />
           </button>
-          <span
-            className="ml-1 font-mono text-xs tabular-nums text-soft"
-            aria-hidden
-          >
-            {formatTime(position.current)}
-            <span className="text-dim"> / {formatTime(position.end)}</span>
+          <span className="ml-1 flex flex-col leading-tight" aria-hidden>
+            <span className="font-mono text-xs tabular-nums text-soft">
+              {formatTime(position.current)}
+              <span className="text-dim"> / {formatTime(position.end)}</span>
+            </span>
+            {bar.total > 0 && (
+              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim">
+                comp. {bar.current}
+                <span className="opacity-60">/{bar.total}</span>
+              </span>
+            )}
           </span>
         </div>
 
