@@ -1,5 +1,4 @@
 import Link from "next/link";
-import StatusBadge from "@/components/status-badge";
 import type { Song } from "@/lib/types";
 
 export default function SongCard({ song }: { song: Song }) {
@@ -18,8 +17,6 @@ export default function SongCard({ song }: { song: Song }) {
         <span className="block truncate font-medium text-ink-100">{song.titulo}</span>
         <span className="block truncate text-sm text-ink-400">{song.artista}</span>
       </span>
-
-      <StatusBadge status={song.status} />
     </Link>
   );
 }
