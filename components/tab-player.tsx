@@ -142,6 +142,23 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
         importer: {
           encoding: importerEncoding(fileUrl),
         },
+        notation: {
+          /*
+           * AlphaTab engraves its own title block from the file metadata. The
+           * page already shows the title and artist, so the engraved one is a
+           * duplicate — and it overlaps the tuning line underneath it.
+           */
+          elements: new Map([
+            [alphaTab.NotationElement.ScoreTitle, false],
+            [alphaTab.NotationElement.ScoreSubTitle, false],
+            [alphaTab.NotationElement.ScoreArtist, false],
+            [alphaTab.NotationElement.ScoreAlbum, false],
+            [alphaTab.NotationElement.ScoreWords, false],
+            [alphaTab.NotationElement.ScoreMusic, false],
+            [alphaTab.NotationElement.ScoreWordsAndMusic, false],
+            [alphaTab.NotationElement.ScoreCopyright, false],
+          ]),
+        },
         display: {
           scale: 1,
           layoutMode: alphaTab.LayoutMode.Page,
@@ -532,13 +549,18 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
              * so the title behaves like a cover page and scrolls away as the
              * score moves up.
              */}
-            <div className="mx-auto w-full max-w-6xl px-4 pb-16 sm:px-10">
-              <div className={`py-10 text-center ${isRendering ? "hidden" : ""}`}>
-                <h2 className="font-display text-3xl leading-tight text-bright sm:text-[2.6rem]">
+            {/*
+             * No max width: AlphaTab justifies each system to whatever it is
+             * given, so capping the container is what makes the staff look
+             * cramped on a wide screen. Only a small gutter is kept.
+             */}
+            <div className="w-full px-2 pb-16 sm:px-6">
+              <div className={`py-8 text-center ${isRendering ? "hidden" : ""}`}>
+                <h2 className="font-display text-3xl leading-tight text-bright sm:text-[2.4rem]">
                   {title}
                 </h2>
-                <p className="mt-2 font-display text-lg italic text-brass">{artist}</p>
-                <div className="fretboard-rule mx-auto mt-6 max-w-xs" aria-hidden />
+                <p className="mt-1.5 font-display text-lg italic text-brass">{artist}</p>
+                <div className="fretboard-rule mx-auto mt-5 max-w-xs" aria-hidden />
               </div>
 
               <div ref={surfaceRef} />
