@@ -1,30 +1,34 @@
 @import "tailwindcss";
 
 /*
- * Warm, near-black neutrals instead of the usual blue-grey dark UI. The score
- * itself is rendered by AlphaTab on light paper, and a cold chrome around a
- * warm page makes the paper look like a hole punched in the screen. Warm
- * neutrals let the two surfaces read as one object.
+ * Night stage: black with a violet cast, never flat grey. The neutrals carry a
+ * little of the accent's hue so the chrome and the accent read as one light
+ * source instead of two unrelated palettes. Violet is spent only on things you
+ * can act on — a button, a focus ring, the bar being played — which is what
+ * keeps a purple UI from looking like decoration.
  */
 @theme {
-  --color-stage: #0b0a09;
-  --color-panel: #131110;
-  --color-panel-2: #1b1917;
-  --color-panel-3: #242019;
-  --color-line: #2a2724;
-  --color-line-2: #3d3833;
+  --color-stage: #08070d;
+  --color-panel: #100e1a;
+  --color-panel-2: #161324;
+  --color-panel-3: #1e1a31;
+  --color-line: #272343;
+  --color-line-2: #3a3459;
 
-  /* Contrast on --color-stage: dim 6.3:1, soft 10.5:1, bright 16:1. */
-  --color-dim: #9a9187;
-  --color-soft: #c4bcb2;
-  --color-bright: #f5f0e9;
+  /* Contrast on --color-stage: dim 6.3:1, soft 10.9:1, bright 17.3:1. */
+  --color-dim: #918cae;
+  --color-soft: #c0bcd6;
+  --color-bright: #efedf8;
 
-  --color-brass: #f2a93b;
-  --color-brass-deep: #c47f14;
-  --color-copper: #d97757;
-  --color-sage: #7fb08a;
-
-  --color-paper: #f7f3ea;
+  /* Interactive violet, and the deeper tone it presses into. */
+  --color-neon: #a880ff;
+  --color-neon-deep: #7d4ce0;
+  /* Cold blue for the second voice: the bass track, a marked selection. */
+  --color-ice: #4ea8ff;
+  /* Songs already learned — cool enough to sit next to the violet. */
+  --color-mint: #4fd6b0;
+  /* Failures only. Warm on purpose, so it breaks the palette and gets read. */
+  --color-alert: #ff7a90;
 
   --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
@@ -40,28 +44,39 @@ body {
   background: var(--color-stage);
   color: var(--color-bright);
   font-family: var(--font-sans);
-  /* Faint warm vignette so the page has a light source instead of flat black. */
+  /* One violet wash from above, like a lamp over the bench — not a gradient
+   * background. It only lifts the top of the page off pure black. */
   background-image: radial-gradient(
     120% 80% at 50% -10%,
-    #1a1613 0%,
+    #171233 0%,
     transparent 60%
   );
   background-attachment: fixed;
 }
 
 /*
- * One focus ring for the whole app. Keyboard users get a loud brass ring on
+ * One focus ring for the whole app. Keyboard users get a loud violet ring on
  * every interactive element; pointer users never see it.
  */
 :focus-visible {
-  outline: 2px solid var(--color-brass);
+  outline: 2px solid var(--color-neon);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Respect the OS setting: no transforms, no transitions, no vibrating string. */
+/*
+ * Respect the OS setting: no transforms, no transitions, no vibrating string.
+ *
+ * One deliberate exception, `.at-cursor-beat`. AlphaTab glides the playback
+ * cursor with an inline `transition: transform <beat duration>ms linear`, and
+ * that movement *is* the information — where inside the bar the music is right
+ * now. Blanked out, the cursor teleports from beat to beat and the score can no
+ * longer be followed, which is not what someone asking for less motion asked
+ * for. It has to be excluded from the selector rather than overridden further
+ * down: `!important` here would otherwise beat AlphaTab's inline style.
+ */
 @media (prefers-reduced-motion: reduce) {
-  *,
+  *:not(.at-cursor-beat),
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
@@ -87,7 +102,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-brass) 30%, transparent);
+  background: color-mix(in srgb, var(--color-neon) 30%, transparent);
   color: var(--color-bright);
 }
 
@@ -139,36 +154,36 @@ body {
  * surface — the notation scrolls over it with nothing framing it.
  */
 .at-desk {
-  background-color: #0f0d0c;
+  background-color: #0c0a15;
   background-image: radial-gradient(
     110% 55% at 50% 0%,
-    #1a1613 0%,
+    #17122c 0%,
     transparent 70%
   );
 }
 
-/* The bar being played warms up rather than being boxed in. */
+/* The bar being played lights up rather than being boxed in. */
 .at-cursor-bar {
-  background: var(--color-brass);
+  background: var(--color-neon);
   opacity: 0.07;
 }
 
-/* The beat cursor is the eye's anchor while playing: a solid brass beam. */
+/* The beat cursor is the eye's anchor while playing: a solid violet beam. */
 .at-cursor-beat {
-  background: var(--color-brass);
+  background: var(--color-neon);
   width: 3px;
   border-radius: 2px;
-  box-shadow: 0 0 12px color-mix(in srgb, var(--color-brass) 55%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-neon) 55%, transparent);
 }
 
 .at-selection div {
-  background: var(--color-copper);
+  background: var(--color-ice);
   opacity: 0.18;
 }
 
 .at-highlight * {
-  fill: var(--color-brass);
-  stroke: var(--color-brass);
+  fill: var(--color-neon);
+  stroke: var(--color-neon);
 }
 
 /* ---------------------------------------------------------------------------
@@ -189,17 +204,17 @@ input[type="range"]::-webkit-slider-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--color-brass);
+  background: var(--color-neon);
   cursor: pointer;
   border: none;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brass) 22%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-neon) 22%, transparent);
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 14px;
   height: 14px;
   border-radius: 999px;
-  background: var(--color-brass);
+  background: var(--color-neon);
   cursor: pointer;
   border: none;
 }

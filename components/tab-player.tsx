@@ -4,9 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AlphaTabApi } from "@coderline/alphatab";
 import KeyboardHints from "@/components/keyboard-hints";
 import Mixer from "@/components/mixer";
-import PlayerControls, {
-  type StaveView,
-} from "@/components/player-controls";
+import PlayerControls, { type StaveView } from "@/components/player-controls";
 
 export type TrackRole = "guitar" | "bass" | "drums" | "other";
 
@@ -35,8 +33,8 @@ function trackRole(program: number, channel: number): TrackRole {
 
 /** Colour tab per instrument family, so the track rack is scannable. */
 const ROLE_MARKS: Record<TrackRole, string> = {
-  guitar: "bg-brass/50",
-  bass: "bg-copper/60",
+  guitar: "bg-neon/50",
+  bass: "bg-ice/60",
   drums: "bg-line-2",
   other: "bg-line-2",
 };
@@ -58,6 +56,27 @@ type Props = {
 };
 
 const ALPHATAB_BASE = "/alphatab";
+
+/*
+ * Where the line being played sits when it starts.
+ *
+ * With `ScrollMode.Smooth` on a page layout, AlphaTab puts the top of the
+ * current system at `scrollOffsetY` when the system begins and then scrolls one
+ * system height over the time that system takes to play — so the music drifts
+ * upward continuously instead of jumping a whole line at the bar change.
+ *
+ * The offset is what keeps that drift on screen: the line starts a third of the
+ * way down and ends up near the top, with the next lines already in view below.
+ * A small fixed offset would let a tall system finish above the top edge.
+ */
+const ANCHOR_RATIO = 0.34;
+const ANCHOR_MIN = 90;
+const ANCHOR_MAX = 260;
+
+function scrollAnchor(viewportHeight: number) {
+  const raw = viewportHeight * ANCHOR_RATIO;
+  return Math.round(Math.min(ANCHOR_MAX, Math.max(ANCHOR_MIN, raw)));
+}
 
 /**
  * Guitar Pro 3-5 store text in Latin-1, so they need windows-1252 or every
@@ -170,22 +189,28 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
            * with explicit fills.
            */
           resources: {
-            staffLineColor: "#413b34",
-            barSeparatorColor: "#544c43",
-            barNumberColor: "#8a8177",
-            mainGlyphColor: "#f0eae1",
-            secondaryGlyphColor: "#9a9187",
+            staffLineColor: "#332e4d",
+            barSeparatorColor: "#443e63",
+            barNumberColor: "#7e78a0",
+            mainGlyphColor: "#eae7f6",
+            secondaryGlyphColor: "#918cae",
           },
         },
         player: {
           playerMode: alphaTab.PlayerMode.EnabledAutomatic,
           soundFont: `${ALPHATAB_BASE}/soundfont/sonivox.sf3`,
           scrollElement: viewport,
-          scrollMode: alphaTab.ScrollMode.Continuous,
-          // Clears the page margin the paper now sits inside, so the played bar
-          // never hides under the top edge of the viewport.
-          scrollOffsetY: -60,
+          /*
+           * `Continuous` only repositions the scroll when the played bar turns
+           * over, which is the teleporting: the sheet sits still, then snaps.
+           * `Smooth` animates the scroll across each beat instead, so the score
+           * moves at the speed of the music.
+           */
+          scrollMode: alphaTab.ScrollMode.Smooth,
+          scrollOffsetY: -scrollAnchor(viewport.clientHeight),
           enableCursor: true,
+          // Also the clock the smooth scroll is timed from: the scroll animates
+          // over the same duration as the cursor's move to the next beat.
           enableAnimatedBeatCursor: true,
           enableElementHighlighting: true,
           enableUserInteraction: true,
@@ -193,7 +218,9 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
       });
       apiRef.current = api;
 
-      api.error.on((e) => setError(e.message || "Erro ao carregar a tablatura."));
+      api.error.on((e) =>
+        setError(e.message || "Erro ao carregar a tablatura."),
+      );
       api.renderStarted.on(() => setIsRendering(true));
       api.renderFinished.on(() => setIsRendering(false));
       api.playerReady.on(() => setIsPlayerReady(true));
@@ -203,7 +230,10 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
           score.tracks.map((t) => ({
             index: t.index,
             name: t.name,
-            role: trackRole(t.playbackInfo.program, t.playbackInfo.primaryChannel),
+            role: trackRole(
+              t.playbackInfo.program,
+              t.playbackInfo.primaryChannel,
+            ),
           })),
         );
         setMix(
@@ -239,7 +269,9 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
       api.playbackRangeChanged.on((e) => {
         const range = e.playbackRange;
         setHasSelection(range !== null);
-        setSelectionLabel(range ? describeRange(api!, range.startTick, range.endTick) : null);
+        setSelectionLabel(
+          range ? describeRange(api!, range.startTick, range.endTick) : null,
+        );
       });
     })();
 
@@ -249,6 +281,25 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
       api?.destroy();
     };
   }, [fileUrl]);
+
+  /*
+   * The anchor is a share of the desk's height, so rotating a phone or opening
+   * the mixer changes it. Scroll offsets need no re-layout, so pushing the new
+   * value through `updateSettings` is enough — no re-render of the score.
+   */
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const observer = new ResizeObserver(() => {
+      const api = apiRef.current;
+      if (!api) return;
+      api.settings.player.scrollOffsetY = -scrollAnchor(viewport.clientHeight);
+      api.updateSettings();
+    });
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
 
   const togglePlay = useCallback(() => apiRef.current?.playPause(), []);
   const stop = useCallback(() => apiRef.current?.stop(), []);
@@ -320,45 +371,40 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
   // Mixer changes go straight to the synth; React state only mirrors them so the
   // UI stays in sync. AlphaTab keeps playing every track of the score regardless
   // of which one is rendered on screen, so this is what actually controls sound.
-  const updateMix = useCallback(
-    (index: number, patch: Partial<TrackMix>) => {
-      const api = apiRef.current;
-      const track = api?.score?.tracks[index];
-      if (!api || !track) return;
+  const updateMix = useCallback((index: number, patch: Partial<TrackMix>) => {
+    const api = apiRef.current;
+    const track = api?.score?.tracks[index];
+    if (!api || !track) return;
 
-      if (patch.mute !== undefined) api.changeTrackMute([track], patch.mute);
-      if (patch.solo !== undefined) api.changeTrackSolo([track], patch.solo);
-      if (patch.volume !== undefined) api.changeTrackVolume([track], patch.volume);
+    if (patch.mute !== undefined) api.changeTrackMute([track], patch.mute);
+    if (patch.solo !== undefined) api.changeTrackSolo([track], patch.solo);
+    if (patch.volume !== undefined)
+      api.changeTrackVolume([track], patch.volume);
 
-      setMix((current) => ({
-        ...current,
-        [index]: { ...current[index], ...patch },
-      }));
-    },
-    [],
-  );
+    setMix((current) => ({
+      ...current,
+      [index]: { ...current[index], ...patch },
+    }));
+  }, []);
 
-  const soloOnly = useCallback(
-    (index: number) => {
-      const api = apiRef.current;
-      if (!api?.score) return;
+  const soloOnly = useCallback((index: number) => {
+    const api = apiRef.current;
+    if (!api?.score) return;
 
-      for (const track of api.score.tracks) {
-        const solo = track.index === index;
-        api.changeTrackSolo([track], solo);
-        api.changeTrackMute([track], false);
-      }
-      setMix((current) =>
-        Object.fromEntries(
-          Object.entries(current).map(([key, value]) => [
-            key,
-            { ...value, solo: Number(key) === index, mute: false },
-          ]),
-        ),
-      );
-    },
-    [],
-  );
+    for (const track of api.score.tracks) {
+      const solo = track.index === index;
+      api.changeTrackSolo([track], solo);
+      api.changeTrackMute([track], false);
+    }
+    setMix((current) =>
+      Object.fromEntries(
+        Object.entries(current).map(([key, value]) => [
+          key,
+          { ...value, solo: Number(key) === index, mute: false },
+        ]),
+      ),
+    );
+  }, []);
 
   const resetMix = useCallback(() => {
     const api = apiRef.current;
@@ -490,18 +536,20 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
                 aria-pressed={active}
                 className={`flex shrink-0 items-center gap-2.5 rounded-lg border px-3 py-1.5 text-left transition ${
                   active
-                    ? "border-brass bg-brass/12 text-brass"
+                    ? "border-neon bg-neon/12 text-neon"
                     : "border-line bg-panel-2 text-soft hover:border-line-2 hover:text-bright"
                 }`}
               >
                 <span
                   aria-hidden
                   className={`h-6 w-0.5 rounded-full ${
-                    active ? "bg-brass" : ROLE_MARKS[track.role]
+                    active ? "bg-neon" : ROLE_MARKS[track.role]
                   }`}
                 />
                 <span className="leading-tight">
-                  <span className="block text-xs font-medium">{instrument}</span>
+                  <span className="block text-xs font-medium">
+                    {instrument}
+                  </span>
                   {player && (
                     <span
                       className={`block text-[10px] ${active ? "opacity-70" : "text-dim"}`}
@@ -516,57 +564,70 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
         </div>
       )}
 
-      <div ref={viewportRef} className="at-desk min-h-0 flex-1 overflow-auto">
-        {error ? (
-          <div
-            role="alert"
-            className="mx-auto mt-20 max-w-sm rounded-2xl border border-copper/40 bg-copper/[0.06] p-6 text-center"
-          >
-            <p className="font-display text-lg text-copper">
-              Não foi possível carregar a tablatura
-            </p>
-            <p className="mt-2 font-mono text-xs leading-relaxed text-dim">{error}</p>
-          </div>
-        ) : (
-          <>
-            {isRendering && (
-              <div className="p-20 text-center">
-                {/* Four beats filling in, so the wait reads as musical time. */}
-                <div className="mx-auto flex w-fit items-end gap-1.5" aria-hidden>
-                  {[0, 1, 2, 3].map((beat) => (
-                    <span
-                      key={beat}
-                      className="h-7 w-1 animate-pulse rounded-full bg-line-2"
-                      style={{ animationDelay: `${beat * 160}ms` }}
-                    />
-                  ))}
-                </div>
-                <p className="mt-4 text-sm text-dim">Montando a tablatura…</p>
-              </div>
-            )}
-            {/*
-             * Everything scrolls together inside the viewport AlphaTab drives,
-             * so the title behaves like a cover page and scrolls away as the
-             * score moves up.
-             */}
-            {/*
-             * No max width: AlphaTab justifies each system to whatever it is
-             * given, so capping the container is what makes the staff look
-             * cramped on a wide screen. Only a small gutter is kept.
-             */}
-            <div className="w-full px-2 pb-16 sm:px-6">
-              <div className={`py-8 text-center ${isRendering ? "hidden" : ""}`}>
-                <h2 className="font-display text-3xl leading-tight text-bright sm:text-[2.4rem]">
-                  {title}
-                </h2>
-                <p className="mt-1.5 font-display text-lg italic text-brass">{artist}</p>
-                <div className="fretboard-rule mx-auto mt-5 max-w-xs" aria-hidden />
-              </div>
+      {/*
+       * The title used to be a cover page inside the scroller. Sideways
+       * scrolling would drag it off to the left within seconds of playing, so
+       * it now sits above the desk as a fixed "now playing" line.
+       */}
+      <div className="flex items-baseline gap-3 border-b border-line px-4 py-2.5 sm:px-6">
+        <h2 className="truncate font-display text-lg leading-tight text-bright sm:text-xl">
+          {title}
+        </h2>
+        <p className="truncate font-display text-sm italic text-neon">
+          {artist}
+        </p>
+      </div>
 
+      <div className="relative min-h-0 flex-1">
+        <div ref={viewportRef} className="at-desk h-full overflow-auto">
+          {error ? (
+            <div
+              role="alert"
+              className="mx-auto mt-20 max-w-sm rounded-2xl border border-alert/40 bg-alert/[0.06] p-6 text-center"
+            >
+              <p className="font-display text-lg text-alert">
+                Não foi possível carregar a tablatura
+              </p>
+              <p className="mt-2 font-mono text-xs leading-relaxed text-dim">
+                {error}
+              </p>
+            </div>
+          ) : (
+            /*
+             * No max width: AlphaTab justifies each system to whatever width it
+             * is given, so capping the container is what makes the staff look
+             * cramped on a wide screen. Only a small gutter is kept.
+             *
+             * Never hidden while rendering either: AlphaTab measures the element
+             * it draws into, and a `display: none` surface is 0 wide, so the
+             * render never completes — and the loading state it would end never
+             * clears. The spinner covers it instead.
+             *
+             * The bottom padding is what lets the last system still scroll up to
+             * the anchor instead of stopping halfway down the desk.
+             */
+            <div className="w-full px-2 pt-6 pb-[70vh] sm:px-6">
               <div ref={surfaceRef} />
             </div>
-          </>
+          )}
+        </div>
+
+        {!error && isRendering && (
+          <div className="pointer-events-none absolute inset-0 grid place-content-center bg-stage/80 text-center">
+            {/* Four beats filling in, so the wait reads as musical time. */}
+            <div className="mx-auto flex w-fit items-end gap-1.5" aria-hidden>
+              {[0, 1, 2, 3].map((beat) => (
+                <span
+                  key={beat}
+                  className="h-7 w-1 animate-pulse rounded-full bg-line-2"
+                  style={{ animationDelay: `${beat * 160}ms` }}
+                />
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-dim">Montando a tablatura…</p>
+          </div>
         )}
+
       </div>
 
       {/* Screen-reader narration of the transport, which is otherwise silent. */}
@@ -622,7 +683,10 @@ export default function TabPlayer({ fileUrl, title, artist }: Props) {
         onOpenShortcuts={() => setShowShortcuts(true)}
       />
 
-      <KeyboardHints open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <KeyboardHints
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </div>
   );
 }

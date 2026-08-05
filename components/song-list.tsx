@@ -50,6 +50,17 @@ export default function SongList({ songs }: { songs: Song[] }) {
     return result;
   }, [songs]);
 
+  /*
+   * Filtering by status only means something once there is more than one status
+   * in the library. While every song is simply "aprendendo", the row of buttons
+   * is furniture that filters nothing — it comes back on its own the day a song
+   * changes status in the Supabase dashboard.
+   */
+  const showFilters = useMemo(
+    () => new Set(songs.map((song) => song.status)).size > 1,
+    [songs],
+  );
+
   // "/" jumps to the search box the way every library UI does, but never while
   // the user is already typing somewhere.
   useEffect(() => {
@@ -80,29 +91,31 @@ export default function SongList({ songs }: { songs: Song[] }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por status">
-          {FILTERS.map((item) => {
-            const active = filter === item.value;
-            return (
-              <button
-                key={item.value}
-                type="button"
-                onClick={() => setFilter(item.value)}
-                aria-pressed={active}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
-                  active
-                    ? "border-brass bg-brass text-stage"
-                    : "border-line bg-panel text-soft hover:border-line-2 hover:text-bright"
-                }`}
-              >
-                {item.label}
-                <span className={`ml-1.5 font-mono tabular-nums ${active ? "opacity-70" : "opacity-50"}`}>
-                  {counts[item.value]}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        {showFilters && (
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrar por status">
+            {FILTERS.map((item) => {
+              const active = filter === item.value;
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setFilter(item.value)}
+                  aria-pressed={active}
+                  className={`rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                    active
+                      ? "border-neon bg-neon text-stage"
+                      : "border-line bg-panel text-soft hover:border-line-2 hover:text-bright"
+                  }`}
+                >
+                  {item.label}
+                  <span className={`ml-1.5 font-mono tabular-nums ${active ? "opacity-70" : "opacity-50"}`}>
+                    {counts[item.value]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="relative sm:ml-auto sm:w-64">
           <label htmlFor="busca" className="sr-only">
@@ -115,7 +128,7 @@ export default function SongList({ songs }: { songs: Song[] }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar"
-            className="w-full rounded-full border border-line bg-panel py-2 pl-4 pr-10 text-sm text-bright transition placeholder:text-dim hover:border-line-2 focus:border-brass focus:outline-none"
+            className="w-full rounded-full border border-line bg-panel py-2 pl-4 pr-10 text-sm text-bright transition placeholder:text-dim hover:border-line-2 focus:border-neon focus:outline-none"
           />
           <kbd
             aria-hidden

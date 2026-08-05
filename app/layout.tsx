@@ -47,7 +47,7 @@ export default function RootLayout({
         {/* First tab stop on every page: jump past the chrome straight to content. */}
         <a
           href="#conteudo"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-brass focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-stage"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-neon focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-stage"
         >
           Pular para o conteúdo
         </a>

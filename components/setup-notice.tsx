@@ -1,7 +1,7 @@
 export default function SetupNotice() {
   return (
-    <div className="rounded-2xl border border-brass/30 bg-brass/[0.04] p-6 text-sm leading-relaxed text-soft">
-      <p className="mb-3 font-display text-lg text-brass">
+    <div className="rounded-2xl border border-neon/30 bg-neon/[0.04] p-6 text-sm leading-relaxed text-soft">
+      <p className="mb-3 font-display text-lg text-neon">
         Supabase ainda não está configurado
       </p>
       <ol className="list-decimal space-y-2 pl-5 marker:font-mono marker:text-dim">
@@ -9,7 +9,7 @@ export default function SetupNotice() {
           Crie um projeto em{" "}
           <a
             href="https://supabase.com/dashboard"
-            className="rounded text-bright underline underline-offset-2 transition hover:text-brass"
+            className="rounded text-bright underline underline-offset-2 transition hover:text-neon"
             target="_blank"
             rel="noreferrer"
           >

@@ -71,7 +71,7 @@ export default function PlayerControls(props: Props) {
     <div className="border-t border-line bg-panel/95 backdrop-blur">
       {/*
        * The seek bar is the signature element: a wound string that fills in
-       * brass as the song plays and shimmers while it is moving.
+       * violet as the song plays and shimmers while it is moving.
        */}
       <input
         type="range"
@@ -83,7 +83,7 @@ export default function PlayerControls(props: Props) {
         onChange={(e) => onSeek(Number(e.target.value))}
         disabled={!isPlayerReady}
         style={{
-          background: `linear-gradient(to right, var(--color-brass) ${played}%, var(--color-line-2) ${played}%)`,
+          background: `linear-gradient(to right, var(--color-neon) ${played}%, var(--color-line-2) ${played}%)`,
         }}
         className={`block h-1 w-full cursor-pointer rounded-none disabled:cursor-not-allowed ${
           isPlaying ? "string-live" : ""
@@ -98,7 +98,7 @@ export default function PlayerControls(props: Props) {
             disabled={!isPlayerReady}
             aria-label={isPlaying ? "Pausar" : "Tocar"}
             title={isPlaying ? "Pausar (Espaço)" : "Tocar (Espaço)"}
-            className="grid h-12 w-12 place-items-center rounded-full bg-brass text-stage transition hover:bg-brass-deep disabled:cursor-not-allowed disabled:bg-line-2 disabled:text-dim"
+            className="grid h-12 w-12 place-items-center rounded-full bg-neon text-stage transition hover:bg-neon-deep disabled:cursor-not-allowed disabled:bg-line-2 disabled:text-dim"
           >
             {isPlaying ? <PauseIcon /> : <PlayIcon />}
           </button>
@@ -149,7 +149,7 @@ export default function PlayerControls(props: Props) {
             aria-label="Voltar a velocidade para 100%"
             title="Voltar para 100%"
             className={`w-12 rounded-md px-1 py-0.5 text-right font-mono text-xs tabular-nums transition hover:bg-panel-2 ${
-              speed === 1 ? "text-soft" : "text-brass"
+              speed === 1 ? "text-soft" : "text-neon"
             }`}
           >
             {Math.round(speed * 100)}%
@@ -222,7 +222,7 @@ export default function PlayerControls(props: Props) {
         <div className="ml-auto flex items-center gap-3">
           {hasSelection ? (
             <p className="text-xs text-soft">
-              Trecho <span className="text-brass">{selectionLabel}</span>{" "}
+              Trecho <span className="text-neon">{selectionLabel}</span>{" "}
               <button
                 type="button"
                 onClick={onClearSelection}
@@ -278,7 +278,7 @@ function Toggle({
       title={`${label} (${hint})`}
       className={`grid h-10 w-10 place-items-center rounded-lg border transition ${
         active
-          ? "border-brass bg-brass/15 text-brass"
+          ? "border-neon bg-neon/15 text-neon"
           : "border-line bg-panel-2 text-dim hover:border-line-2 hover:text-bright"
       }`}
     >

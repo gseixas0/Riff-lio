@@ -32,7 +32,7 @@ Tabela `musicas`:
 | `titulo` | nome da música |
 | `artista` | artista/banda |
 | `arquivo_tab` | referência ao arquivo no Storage |
-| `status` | `quero aprender` \| `aprendendo` \| `aprendida` |
+| `status` | `quero aprender` \| `aprendendo` \| `aprendida` — default `aprendendo` |
 | `data_adicionada` | timestamp |
 
 Storage: bucket dedicado para os arquivos de tab (`.gp5` / `.gpx` / `.musicxml`).
@@ -56,20 +56,30 @@ Ficam em `.env.local` (nunca commitado) e nas Environment Variables do projeto n
 
 ## Design
 
-Direção: **bancada de estudo** — editorial impresso encontrando oficina. Os tokens
+Direção: **palco noturno** — preto com fundo violeta, editorial em cima. Os tokens
 vivem no `@theme` de `app/globals.css`; não usar cor solta no componente.
 
-- Neutros **quentes** (`stage`, `panel`, `line`, `dim`, `soft`, `bright`). A
-  partitura do AlphaTab é papel claro; um chrome azulado em volta faz o papel
-  parecer buraco na tela.
-- Acento `brass` (+ `brass-deep`), secundários `copper` e `sage` (status).
+- Neutros com **fundo violeta**, nunca cinza puro (`stage`, `panel`, `line`,
+  `dim`, `soft`, `bright`). Chrome e acento partilham a matiz, então a tela lê
+  como uma fonte de luz só.
+- Acento `neon` (violeta, + `neon-deep`), secundário `ice` (azul, segunda voz:
+  baixo, seleção), `mint` (aprendida) e `alert` (só erro — quente de propósito,
+  quebra a paleta pra ser lido).
+- **Violeta só no acionável**: botão, foco, compasso tocando. Sem degradê
+  decorativo, sem card de vidro — é o que separa isso de UI genérica de IA.
 - Tipografia: `font-display` (Fraunces) em títulos, `font-sans` (Geist) na
   interface, `font-mono` (Geist Mono) em número, tempo e atalho.
 - Motivo assinatura: **corda / traste**. `.fretboard-rule` como régua de seção e
-  a barra de posição desenhada como corda que preenche em brass.
+  a barra de posição desenhada como corda que preenche em violeta.
+- A partitura do AlphaTab tem cor própria em `display.resources`
+  (`tab-player.tsx`) — CSS não alcança aquele SVG. Mexeu na paleta, mexe lá.
 
 Acessibilidade é requisito, não enfeite: foco visível global via `:focus-visible`,
-`prefers-reduced-motion` respeitado, `aria-pressed` em todo toggle,
+`prefers-reduced-motion` respeitado — com uma exceção só, `.at-cursor-beat`: o
+deslize do cursor é uma `transition` inline da AlphaTab e é a informação de onde
+a música está; matando ela, a seta teleporta de batida em batida. Por isso o
+seletor é `*:not(.at-cursor-beat)`, e não um override depois (o `!important`
+ganharia do estilo inline da lib). Ainda: `aria-pressed` em todo toggle,
 `aria-valuetext` em todo slider (senão o leitor de tela fala "83000"), região
 `aria-live` narrando o transporte, e todo controle do player tem atalho de tecla
 (painel `?`).

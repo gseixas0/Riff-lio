@@ -19,8 +19,8 @@ const ROLE_LABELS: Record<TrackRole, string> = {
 };
 
 const ROLE_STYLES: Record<TrackRole, string> = {
-  guitar: "border-brass/50 bg-brass/10 text-brass",
-  bass: "border-copper/40 bg-copper/10 text-copper",
+  guitar: "border-neon/50 bg-neon/10 text-neon",
+  bass: "border-ice/40 bg-ice/10 text-ice",
   drums: "border-line-2 bg-panel-2 text-dim",
   other: "border-line-2 bg-panel-2 text-dim",
 };
@@ -104,7 +104,7 @@ export default function Mixer({
                   active={state.mute}
                   onClick={() => onChange(track.index, { mute: !state.mute })}
                   label={`Silenciar ${name}`}
-                  activeClass="border-copper bg-copper/15 text-copper"
+                  activeClass="border-ice bg-ice/15 text-ice"
                 >
                   M
                 </MixButton>
@@ -112,7 +112,7 @@ export default function Mixer({
                   active={state.solo}
                   onClick={() => onChange(track.index, { solo: !state.solo })}
                   label={`Solo ${name}`}
-                  activeClass="border-brass bg-brass/15 text-brass"
+                  activeClass="border-neon bg-neon/15 text-neon"
                 >
                   S
                 </MixButton>

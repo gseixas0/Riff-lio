@@ -10,11 +10,13 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const songs = isSupabaseConfigured ? await listSongs() : [];
 
+  // Only statuses that actually have songs. A shelf of "00" reads as broken
+  // rather than as empty, and today every song here is one being learned.
   const tally = SONG_STATUSES.map((status) => ({
     status,
     label: STATUS_LABELS[status],
     count: songs.filter((song) => song.status === status).length,
-  }));
+  })).filter((item) => item.count > 0);
 
   return (
     <main
@@ -27,15 +29,14 @@ export default async function Home() {
             <h1 className="font-display text-5xl leading-[0.95] tracking-tight text-bright sm:text-6xl">
               Riff
               <span
-                className="text-brass italic"
+                className="text-neon italic"
                 style={{ fontVariationSettings: '"WONK" 1, "SOFT" 8' }}
               >
                 ólio
               </span>
             </h1>
             <p className="mt-3 max-w-md text-sm leading-relaxed text-dim">
-              Caderno de estudo em público. O que estou tirando no violão e no
-              baixo, com a tablatura tocando junto.
+              O que estou tirando agora no violão e no baixo.
             </p>
           </div>
 

@@ -3,8 +3,8 @@ import { STATUS_LABELS, type Song } from "@/lib/types";
 
 const STATUS_DOT: Record<Song["status"], string> = {
   "quero aprender": "bg-line-2",
-  aprendendo: "bg-brass",
-  aprendida: "bg-sage",
+  aprendendo: "bg-neon",
+  aprendida: "bg-mint",
 };
 
 /** Fret positions that carry an inlay dot on a real fretboard. */
@@ -20,7 +20,7 @@ export default function SongCard({ song, index }: { song: Song; index: number })
       {/* Brass edge that lights up on hover, standing in for a fret wire. */}
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 w-0.5 origin-center scale-y-0 bg-brass transition-transform duration-200 group-hover:scale-y-100 group-focus-visible:scale-y-100"
+        className="absolute inset-y-0 left-0 w-0.5 origin-center scale-y-0 bg-neon transition-transform duration-200 group-hover:scale-y-100 group-focus-visible:scale-y-100"
       />
 
       <span
@@ -36,7 +36,7 @@ export default function SongCard({ song, index }: { song: Song; index: number })
       {/* Play glyph takes the index slot on hover — same footprint, no reflow. */}
       <span
         aria-hidden
-        className="absolute left-4 w-6 shrink-0 text-brass opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+        className="absolute left-4 w-6 shrink-0 text-neon opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
           <path d="M8 5.14v13.72L19 12 8 5.14Z" />

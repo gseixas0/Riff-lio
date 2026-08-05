@@ -2,14 +2,14 @@ import { STATUS_LABELS, type SongStatus } from "@/lib/types";
 
 const STYLES: Record<SongStatus, string> = {
   "quero aprender": "border-line-2 text-soft",
-  aprendendo: "border-brass/50 bg-brass/10 text-brass",
-  aprendida: "border-sage/40 bg-sage/10 text-sage",
+  aprendendo: "border-neon/50 bg-neon/10 text-neon",
+  aprendida: "border-mint/40 bg-mint/10 text-mint",
 };
 
 const DOTS: Record<SongStatus, string> = {
   "quero aprender": "bg-line-2",
-  aprendendo: "bg-brass",
-  aprendida: "bg-sage",
+  aprendendo: "bg-neon",
+  aprendida: "bg-mint",
 };
 
 /**

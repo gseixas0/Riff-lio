@@ -5,7 +5,9 @@ create table if not exists public.musicas (
   titulo text not null,
   artista text not null,
   arquivo_tab text not null,
-  status text not null default 'quero aprender'
+  -- Songs land here because they are being learned right now; the other two
+  -- statuses are set by hand from the dashboard when that changes.
+  status text not null default 'aprendendo'
     check (status in ('quero aprender', 'aprendendo', 'aprendida')),
   data_adicionada timestamptz not null default now()
 );
